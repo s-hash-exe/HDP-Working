@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/../DeltaNudgeTool-py/.idea/DeltaNudgeTool-py.iml" filepath="$PROJECT_DIR$/../DeltaNudgeTool-py/.idea/DeltaNudgeTool-py.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../FlaskServer/.idea/FlaskServer.iml" filepath="$PROJECT_DIR$/../FlaskServer/.idea/FlaskServer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../HDP-Modified-Shared-main/.idea/HDP-Modified-Shared-main.iml" filepath="$PROJECT_DIR$/../HDP-Modified-Shared-main/.idea/HDP-Modified-Shared-main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/HDP-Working.iml" filepath="$PROJECT_DIR$/.idea/HDP-Working.iml" />
+    </modules>
+  </component>
+</project>
