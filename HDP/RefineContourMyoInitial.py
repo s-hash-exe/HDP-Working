@@ -593,7 +593,7 @@ def mainForDP(image_data, contour, ctrCentre,userPoint, mouseTheta, patient, GT,
                             strip[j,i]=0
 
                     DPObj.setupGraph(strip, BPmean, MCmean=45, tCtr=tCtr, rad=rad, adjustPars=[mouseTheta,mouseDist,tCtr[fstIdx],tCtr[lstIdx]])
-                    ctrCorrected = DPObj.runDynPorg(theta=mouseTheta, user_dist=mouseDist)
+                    ctrCorrected = DPObj.runDynPorg()
                 else:
                     tCtr, strip = getPartialCtr(tCtr, fstIdx, lstIdx), getPartialCtr(strip, fstIdx, lstIdx)
                     DPObj.setupGraph(strip, BPmean, MCmean=45, tCtr=tCtr, rad=rad)
