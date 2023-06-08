@@ -63,10 +63,11 @@ def getContour():
         # Here we pass the full contour along with user point to contourMgr.
         # Output -> Open contour's first and last index in the spead of 15 deg on each side
 
-        firstPointIdx, lastPointIdx, ctrCentre = contourMgr.mainFunc(contour, mousePoint)
+        firstPointIdx, lastPointIdx, ctrCentre, mouseDir = contourMgr.mainFunc(contour, mousePoint)
 
         print("First point index: {}".format(firstPointIdx))
         print("Last point index: {}".format(lastPointIdx))
+        print("Mouse Direction: {}".format(mouseDir))
 
         # Extracting the contour between firstPointIdx and lastPointIdx
 
@@ -83,9 +84,10 @@ def getContour():
         # Output -> Refined Contour
 
         dirs=["E:\\Work\\HDP-Working\\HDP\\KMC\\440991\\HHT_LGE_SAX_1","1.3.46.670589.11.33392.5.20.1.1.2028.2021010614543136408.1","image_03.dcm"]
+
         ds, img, LGEImName = readImage(Path(dirs[0]), dirs[1], dirs[2])
         print("Read Image: {}".format(img))
-        refinedContour = RefineContourMyoInitial.mainFunc(tCtr, ctrCentre, mousePoint,[ds,img,LGEImName], False)
+        refinedContour = RefineContourMyoInitial.mainFunc(tCtr, ctrCentre, mousePoint, mouseDir, [ds,img,LGEImName], False)
         print("Refined Contour: {}".format(refinedContour))
 
 

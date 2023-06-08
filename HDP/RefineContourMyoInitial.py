@@ -518,7 +518,19 @@ def getPartialCtr(ctr, fstIdx, lstIdx):
     else:                       pCtr = np.concatenate((ctr[fstIdx:], ctr[:lstIdx]))
     return pCtr
 
-def mainForDP(image_data, contour, ctrCentre,userPoint, patient, GT, type='HHT_LGE') :
+
+def updateBPCost(costArr, mTheta, mDist, fDist, lDist):
+    for i in [mTheta-10,mTheta,mTheta+10]:
+        for j in range(len(costArr[0])):
+            if (i==mTheta-10 and j==fDist) or (i==mTheta and j==mDist) or (i==mTheta+10 and j==lDist):
+                costArr[i][j]=np.max(costArr)
+            elif j==fDist or j==mDist or j==lDist:
+                costArr[i][j]=0
+
+
+
+
+def mainForDP(image_data, contour, ctrCentre,userPoint, mouseTheta, patient, GT, type='HHT_LGE') :
     global fp, data
     DPObj = DynProg()
     ctrsRef = [None, None]
@@ -543,7 +555,7 @@ def mainForDP(image_data, contour, ctrCentre,userPoint, patient, GT, type='HHT_L
                     print('No contour detected for image: ', path / folder / LGEImName, 'Skipping)')
                     continue  # No contours in the image
                 ctr = ctrs[0]
-                # ctr = ctrs[0][:len(ctrs[0]) // 2]
+                ctr = ctrs[0][:len(ctrs[0]) // 2]
                 loc = getCentre(ctr)
 
             else:
@@ -560,14 +572,32 @@ def mainForDP(image_data, contour, ctrCentre,userPoint, patient, GT, type='HHT_L
             #It uses the old function that works on a closed contour
 
             strip, BPmean = SF.getStrip(img, loc, rad - 10, rad + 30, samples=SAMPLE_PTS)
-            tCtr, strip = getPartialCtr(tCtr, fstIdx, lstIdx), getPartialCtr(strip, fstIdx, lstIdx)
+            # tCtr, strip = getPartialCtr(tCtr, fstIdx, lstIdx), getPartialCtr(strip, fstIdx, lstIdx)
             # Transform the image into polar coordinates with #SAMPLE_PTS along the contour and for radius
             # from rad-10, rad+25. Its dimension is (SAMPLE_PTS, 20)
 
             # -----------------------------------Modification------------------------------------------------------------
             for i in range(1) :  # for both endo and epicardium contours
-                DPObj.setupGraph(strip, BPmean, MCmean=45, tCtr=tCtr, rad=rad)
-                ctrCorrected = DPObj.runDynPorg()
+                # DPObj.setupGraph(strip, BPmean, MCmean=45, tCtr=tCtr, rad=rad)
+                if ONECARDIO:
+                    mouseDist = math.sqrt((ctrCentre[0] - userPoint[0]) ** 2 + (ctrCentre[1] - userPoint[1]) ** 2)
+                    mouseDist = mouseDist - rad + 10
+                    # Correct for user input point
+                    # updateBPCost(DPObj.BPCost,mTheta=mouseTheta,mDist=mouseDist,fDist=tCtr[fstIdx],lDist=tCtr[lstIdx])
+
+                    tCtr, strip = getPartialCtr(tCtr, fstIdx, lstIdx), getPartialCtr(strip, fstIdx, lstIdx)
+
+                    for i in [tCtr[0],tCtr[-1]]:
+                        strip[0,i]=1
+                        for j in range(1,len(strip)):
+                            strip[j,i]=0
+
+                    DPObj.setupGraph(strip, BPmean, MCmean=45, tCtr=tCtr, rad=rad, adjustPars=[mouseTheta,mouseDist,tCtr[fstIdx],tCtr[lstIdx]])
+                    ctrCorrected = DPObj.runDynPorg(theta=mouseTheta, user_dist=mouseDist)
+                else:
+                    tCtr, strip = getPartialCtr(tCtr, fstIdx, lstIdx), getPartialCtr(strip, fstIdx, lstIdx)
+                    DPObj.setupGraph(strip, BPmean, MCmean=45, tCtr=tCtr, rad=rad)
+                    ctrCorrected = DPObj.runDynPorg()
                 ctrsRef[i] = transformCtrBack(ctrCorrected,loc,120,[first_angle,last_angle])  # Polar coordinate system to the original Cartesian coordinate system
                 if ONECARDIO:
                     global data
@@ -587,7 +617,7 @@ def mainForDP(image_data, contour, ctrCentre,userPoint, patient, GT, type='HHT_L
                 save_folder = path / 'Result'
                 os.makedirs(save_folder, exist_ok=True)
                 # temp_ctr= [ctr]
-                showOrigWithMask(save_folder / ('Mask' + LGEImName), img, ctrsRef)
+                # showOrigWithMask(save_folder / ('Mask' + LGEImName), img, ctrsRef)
                 print("Name {}".format(LGEImName))
                 imName = save_folder / ('Ctr_' + LGEImName)
                 plotCtrOnImage(imName, img, DPObj.edgeIm, ctrsRef, [ctr], loc, LGEImName, DICE=dice, radius=DPObj.rad)
@@ -613,7 +643,7 @@ def createCSV(file):
 
 
 
-def mainFunc(contour=None, ctrCentre=None, userPoint=None, image_data=None, standalone=None):
+def mainFunc(contour=None, ctrCentre=None, userPoint=None, mouseTheta=None, image_data=None, standalone=None):
     global ONECARDIO
     ONECARDIO = not standalone
     root = Path(r'.')
@@ -621,7 +651,7 @@ def mainFunc(contour=None, ctrCentre=None, userPoint=None, image_data=None, stan
         # path_folder = dirs[0] = "E:\\Work\\HDP-Working\\HDP\\KMC\\440991\\HHT_LGE_SAX_1"
         # S0PId = dirs[1] =  "1.3.46.670589.11.33392.5.20.1.1.2028.2021010614543136408.1"
         # image_file = dirs[2] = "image_03.dcm"
-        refinedContour = mainForDP(image_data, contour, ctrCentre, userPoint, None, None)
+        refinedContour = mainForDP(image_data, contour, ctrCentre, userPoint, mouseTheta, None, None)
         return refinedContour
 
     createCSV(root / 'DICE_Scores.csv')
@@ -631,7 +661,7 @@ def mainFunc(contour=None, ctrCentre=None, userPoint=None, image_data=None, stan
         for pat in os.listdir(root / hosp) :
             data['Pat Folder'] = str(root / hosp / pat)
             GT = readGroundTruth(root / hosp / pat)
-            mainForDP(None, None, None, None, root / hosp / pat, GT)
+            mainForDP(None, None, None, None, None, root / hosp / pat, GT)
 
     fp.close()
 # -----------------------------------------------------------------------------------------------------------------------

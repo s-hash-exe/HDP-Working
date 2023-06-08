@@ -68,6 +68,18 @@ class prepareGraph():
         s.batch_size = 5  # It is reset in setupGraph for testdata
 
 #-----------------------------------------------------------------------------------------------------------------------
+
+    def updateBPCost(s,mTheta, mDist, fIndex, lIndex):
+        mIndex = abs(fIndex - mDist) + 1
+
+        for i in [mTheta - 10, mTheta, mTheta + 10]:
+            for j in range(len(s.BPCost[0])):
+                if (i == mTheta - 10 and j == fIndex) or (i == mTheta and j == mIndex) or (
+                        i == mTheta + 10 and j == lIndex):
+                    s.BPCost[i][j] = np.max(s.BPCost)
+                elif j == fIndex or j == mDist or j == lIndex:
+                    s.BPCost[i][j] = 0
+
     def interpolatePath(s, path):  # It interpolates for intermediate points when LVL_STEP_SIZE is greater than 1.
         ipath = []
         for i, nd in enumerate(path):
@@ -185,7 +197,7 @@ class prepareGraph():
         return
 
 #-----------------------------------------------------------------------------------------------------------------------
-    def setupGraph(s, strip, BPmean, MCmean=40, tCtr=None, rad=15):
+    def setupGraph(s, strip, BPmean, MCmean=40, tCtr=None, rad=15, adjustPars=None):
         if not test:
             s.tCtr = tCtr
             s.rad, s.strip = rad, strip
@@ -229,6 +241,8 @@ class prepareGraph():
         nodes = np.array([[c for c in range(len(s.BPCost[0]))] for j in range(len(s.BPCost))])  # it is used as node ID
         s.numLevels, s.numNodes = nodes.shape
         s.createGraph(nodes)
+        if adjustPars is not None:
+            s.updateBPCost(mTheta=adjustPars[0], mDist=adjustPars[1], fDist=adjustPars[2], lDist=adjustPars[3])
 
 #-----------------------------------------------------------------------------------------------------------------------
     def shapePenalty(s, p):
@@ -292,13 +306,13 @@ class prepareGraph():
         print('----------- Saved data and terminating the program -------------')
         exit(0)
 
-    def runDynPorg(s):
+    def runDynPorg(s, theta=None, user_dist=None):
         DP_Ins = DynProg()
         DP_Ins.sign = 0  # 1 if s.ctrType == 0 else -1 <<<<<<<<<<<<<<<<<<=============================
         """sign = -1 means it adds a penalty for higher r value -> makes the contour closer to blood pool
            sign= 1 means it adds to the path cost and makes the contour further from centroid of myocardium."""
         DP_Ins.rad = s.rad + 6
-        DP_Ins.initialize(s.BPCost, nd_nbrs=s.nd_nbrs, BATCH_SIZE=s.batch_size, mean=s.meanEdgeMag)
+        DP_Ins.initialize(s.BPCost, nd_nbrs=s.nd_nbrs, BATCH_SIZE=s.batch_size, mean=s.meanEdgeMag, mTheta=theta, mDist=user_dist)
         graph, aGrad = {}, {}  # to store graphs and grdients at different rounds (to plot and study any missing details)
 
         while (s.numLevels > 2):  # As there is a dummy node -1 at level -1
@@ -344,8 +358,18 @@ class DynProg:
 
 #-----------------------------------------------------------------------------------------------------------------------
 
-    def initialize(s, BPCost, nd_nbrs=2, BATCH_SIZE=5, mean=6):
+    def initialize(s, BPCost, nd_nbrs=2, BATCH_SIZE=5, mean=6, mTheta=None, mDist=None):
         s.BPCost = BPCost
+        # if mTheta is not None:
+        #
+        #     mTheta = mTheta//(360//len(BPCost))
+        #     for j in range(len(BPCost[0])):
+        #         if j==mDist:
+        #             s.BPCost[mTheta][j]=np.max(BPCost)
+        #         else:
+        #             s.BPCost[mTheta][j] = 0
+        #     for i in [mTheta-10,mTheta,mTheta+10]:
+
         s.numLevels, s.numNodes = s.BPCost.shape
         s.BATCH_SIZE = BATCH_SIZE
         s.nd_nbrs = nd_nbrs  # Separation between two nodes at adjacent levels that is considered as a valid transition

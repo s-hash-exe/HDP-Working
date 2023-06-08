@@ -8,7 +8,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="FlaskServer" />
     <orderEntry type="module" module-name="DeltaNudgeTool-py" />
-    <orderEntry type="module" module-name="HDP-Modified-Shared-main" />
   </component>
   <component name="PyDocumentationSettings">
     <option name="format" value="PLAIN" />
