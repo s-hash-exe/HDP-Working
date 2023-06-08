@@ -306,13 +306,13 @@ class prepareGraph():
         print('----------- Saved data and terminating the program -------------')
         exit(0)
 
-    def runDynPorg(s, theta=None, user_dist=None):
+    def runDynPorg(s):
         DP_Ins = DynProg()
         DP_Ins.sign = 0  # 1 if s.ctrType == 0 else -1 <<<<<<<<<<<<<<<<<<=============================
         """sign = -1 means it adds a penalty for higher r value -> makes the contour closer to blood pool
            sign= 1 means it adds to the path cost and makes the contour further from centroid of myocardium."""
         DP_Ins.rad = s.rad + 6
-        DP_Ins.initialize(s.BPCost, nd_nbrs=s.nd_nbrs, BATCH_SIZE=s.batch_size, mean=s.meanEdgeMag, mTheta=theta, mDist=user_dist)
+        DP_Ins.initialize(s.BPCost, nd_nbrs=s.nd_nbrs, BATCH_SIZE=s.batch_size, mean=s.meanEdgeMag)
         graph, aGrad = {}, {}  # to store graphs and grdients at different rounds (to plot and study any missing details)
 
         while (s.numLevels > 2):  # As there is a dummy node -1 at level -1
@@ -358,7 +358,7 @@ class DynProg:
 
 #-----------------------------------------------------------------------------------------------------------------------
 
-    def initialize(s, BPCost, nd_nbrs=2, BATCH_SIZE=5, mean=6, mTheta=None, mDist=None):
+    def initialize(s, BPCost, nd_nbrs=2, BATCH_SIZE=5, mean=6):
         s.BPCost = BPCost
         # if mTheta is not None:
         #
